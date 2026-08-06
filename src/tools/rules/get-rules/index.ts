@@ -5,7 +5,7 @@
 import { successWithJson, errorFromCatch } from '../../../utils/response.js';
 // import type { Rule } from '../../../types.js';
 import { fetchAllRules } from '../../../core/data/fetch-rules.js';
-import { RuleEntity } from '@actual-app/core/types/models';
+import type { RuleEntity } from '../../../actual-api.js';
 
 export const schema = {
   name: 'get-rules',

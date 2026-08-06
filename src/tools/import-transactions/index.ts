@@ -3,7 +3,7 @@
 // ----------------------------
 
 import { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
-import { utils } from '@actual-app/api';
+import * as api from '@actual-app/api';
 import { toJSONSchema } from 'zod';
 import { success, errorFromCatch } from '../../utils/response.js';
 import { importTransactions } from '../../actual-api.js';
@@ -27,10 +27,10 @@ export async function handler(args: ImportTransactionsArgs): Promise<CallToolRes
     const entities = transactions.map((t) => ({
       ...t,
       account: accountId,
-      amount: utils.amountToInteger(t.amount),
+      amount: api.utils.amountToInteger(t.amount),
       subtransactions: t.subtransactions?.map((s) => ({
         ...s,
-        amount: utils.amountToInteger(s.amount),
+        amount: api.utils.amountToInteger(s.amount),
       })),
     }));
 

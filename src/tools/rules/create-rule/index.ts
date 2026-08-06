@@ -5,7 +5,7 @@
 import { successWithJson, errorFromCatch } from '../../../utils/response.js';
 import { createRule } from '../../../actual-api.js';
 import { RuleInputSchema } from '../input-schema.js';
-import { RuleEntity } from '@actual-app/core/types/models';
+import type { RuleEntity } from '../../../actual-api.js';
 
 export const schema = {
   name: 'create-rule',

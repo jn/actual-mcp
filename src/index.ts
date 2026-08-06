@@ -17,10 +17,11 @@ import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import dotenv from 'dotenv';
 import express, { NextFunction, Request, Response } from 'express';
 import { randomUUID } from 'node:crypto';
-import { parseArgs } from 'node:util';
+import { format, parseArgs } from 'node:util';
 import { initActualApi, shutdownActualApi } from './actual-api.js';
 import { fetchAllAccounts } from './core/data/fetch-accounts.js';
 import { createServer } from './server.js';
+import { closeStreamableSession, StreamableSessionMap } from './streamable-session-manager.js';
 import { isInitializeRequest } from '@modelcontextprotocol/sdk/types.js';
 
 // Reason: dotenv@17 (dotenvx) prints to stdout by default, which breaks MCP stdio JSON parsing
@@ -108,6 +109,20 @@ const safeStringify = (value: unknown): string => {
 const toErrorMessage = (value: unknown): string =>
   value instanceof Error ? `${value.name}: ${value.message}` : safeStringify(value);
 
+/**
+ * Redirect console.log/info/warn to stderr in stdio mode so MCP JSON-RPC
+ * output on stdout remains valid.
+ */
+const redirectConsoleToStderr = (): void => {
+  const write = (level: 'log' | 'info' | 'warn', args: unknown[]): void => {
+    process.stderr.write(`[${level}] ${format(...args)}\n`);
+  };
+
+  console.log = (...args: unknown[]) => write('log', args);
+  console.info = (...args: unknown[]) => write('info', args);
+  console.warn = (...args: unknown[]) => write('warn', args);
+};
+
 // ----------------------------
 // SERVER STARTUP
 // ----------------------------
@@ -171,7 +186,7 @@ async function main(): Promise<void> {
 
     // Per-connection maps for legacy SSE and streamable HTTP
     const legacySseConnections = new Map<string, { server: Server; transport: SSEServerTransport }>();
-    const streamableSessions = new Map<string, { server: Server; transport: StreamableHTTPServerTransport }>();
+    const streamableSessions: StreamableSessionMap<StreamableHTTPServerTransport> = new Map();
 
     const parseSessionHeader = (value: string | string[] | undefined): string | undefined => {
       if (!value) {
@@ -228,8 +243,7 @@ async function main(): Promise<void> {
                 console.info(`Streamable HTTP session initialized (session ${sessionId}) from ${remoteAddress}`);
               },
               onsessionclosed: (sessionId) => {
-                streamableSessions.delete(sessionId);
-                sessionServer.close();
+                closeStreamableSession(streamableSessions, sessionId);
                 console.info(`Streamable HTTP session closed (session ${sessionId})`);
               },
             });
@@ -237,7 +251,7 @@ async function main(): Promise<void> {
             streamableTransport.onclose = () => {
               const activeSessionId = streamableTransport.sessionId;
               if (activeSessionId) {
-                streamableSessions.delete(activeSessionId);
+                closeStreamableSession(streamableSessions, activeSessionId);
                 console.info(`Streamable HTTP transport closed (session ${activeSessionId})`);
               }
             };
@@ -312,13 +326,13 @@ async function main(): Promise<void> {
       for (const [, conn] of legacySseConnections) {
         conn.server.close();
       }
-      for (const [, session] of streamableSessions) {
-        session.server.close();
-        session.transport.close();
+      for (const sessionId of Array.from(streamableSessions.keys())) {
+        closeStreamableSession(streamableSessions, sessionId);
       }
       process.exit(0);
     });
   } else {
+    redirectConsoleToStderr();
     const server = createServer({ enableWrite: !!enableWrite });
     const transport = new StdioServerTransport();
     await server.connect(transport);

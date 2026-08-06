@@ -4,7 +4,7 @@
 
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { ListResourcesRequestSchema, ReadResourceRequestSchema } from '@modelcontextprotocol/sdk/types.js';
-import api from '@actual-app/api';
+import * as api from '@actual-app/api';
 
 // Import types from types.ts
 import { Account, Transaction } from './types.js';

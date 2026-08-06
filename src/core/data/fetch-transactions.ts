@@ -3,7 +3,6 @@ import { fetchAllPayees } from './fetch-payees.js';
 import { fetchAllCategories } from './fetch-categories.js';
 import { GroupAggregator } from '../aggregation/group-by.js';
 import type { Account, Transaction, Payee, Category } from '../types/domain.js';
-import { TransactionEntity } from '@actual-app/core/types/models';
 
 const groupAggregator = new GroupAggregator();
 
@@ -29,7 +28,7 @@ async function _buildTransactionLookups(options: TransactionLookupOptions): Prom
   return { payeesById, categoriesById };
 }
 
-async function _enrichTransactions(transactions: TransactionEntity[]): Promise<Transaction[]> {
+async function _enrichTransactions(transactions: Transaction[]): Promise<Transaction[]> {
   if (transactions.length === 0) {
     return transactions;
   }
@@ -47,7 +46,7 @@ async function _enrichTransactions(transactions: TransactionEntity[]): Promise<T
     includeCategories: needsCategories,
   });
 
-  return transactions.map((transaction: TransactionEntity) => {
+  return transactions.map((transaction: Transaction) => {
     const payeeName = needsPayees && transaction.payee ? payeesById[transaction.payee]?.name : undefined;
     const categoryName =
       needsCategories && transaction.category ? categoriesById[transaction.category]?.name : undefined;

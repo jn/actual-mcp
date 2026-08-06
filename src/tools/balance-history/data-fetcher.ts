@@ -2,7 +2,7 @@
 import { fetchAllAccounts } from '../../core/data/fetch-accounts.js';
 import { fetchAllTransactions, fetchTransactionsForAccount } from '../../core/data/fetch-transactions.js';
 import type { Account, Transaction } from '../../core/types/domain.js';
-import api from '@actual-app/api';
+import * as api from '@actual-app/api';
 
 export class BalanceHistoryDataFetcher {
   async fetchAll(

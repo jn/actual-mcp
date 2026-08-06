@@ -1,11 +1,16 @@
 import * as api from '@actual-app/api';
-import * as fs from 'fs';
-import * as path from 'path';
-import * as os from 'os';
+import fs from 'fs';
+import path from 'path';
+import os from 'os';
 import { BudgetFile, TransactionData, UpdateTransactionData } from './types.js';
-import { APIAccountEntity, APICategoryEntity, APICategoryGroupEntity, APIPayeeEntity } from '@actual-app/api/models';
-import { RuleEntity, TransactionEntity } from '@actual-app/core/types/models';
-import { ImportTransactionEntity } from '@actual-app/core/types/models/import-transaction';
+
+export type APIAccountEntity = Awaited<ReturnType<typeof api.getAccounts>>[number];
+export type APICategoryEntity = Awaited<ReturnType<typeof api.getCategories>>[number];
+export type APICategoryGroupEntity = Awaited<ReturnType<typeof api.getCategoryGroups>>[number];
+export type APIPayeeEntity = Awaited<ReturnType<typeof api.getPayees>>[number];
+export type RuleEntity = Awaited<ReturnType<typeof api.getRules>>[number];
+export type TransactionEntity = Awaited<ReturnType<typeof api.getTransactions>>[number];
+export type ImportTransactionEntity = Parameters<typeof api.importTransactions>[1][number];
 
 const DEFAULT_DATA_DIR: string = path.resolve(os.homedir() || '.', '.actual');
 

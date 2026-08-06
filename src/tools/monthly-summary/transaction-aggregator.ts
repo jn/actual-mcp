@@ -1,5 +1,36 @@
 import { Transaction, MonthData } from '../../types.js';
 
+interface TransactionMonth {
+  key: string;
+  year: number;
+  month: number;
+}
+
+function getTransactionMonth(dateText: string): TransactionMonth {
+  const dateOnlyMatch = /^(\d{4})-(\d{2})-\d{2}$/.exec(dateText);
+
+  if (dateOnlyMatch) {
+    const year = Number(dateOnlyMatch[1]);
+    const month = Number(dateOnlyMatch[2]);
+
+    return {
+      key: `${dateOnlyMatch[1]}-${dateOnlyMatch[2]}`,
+      year,
+      month,
+    };
+  }
+
+  const date = new Date(dateText);
+  const year = date.getFullYear();
+  const month = date.getMonth() + 1;
+
+  return {
+    key: `${year}-${String(month).padStart(2, '0')}`,
+    year,
+    month,
+  };
+}
+
 export class MonthlySummaryTransactionAggregator {
   aggregate(
     transactions: Transaction[],
@@ -15,15 +46,12 @@ export class MonthlySummaryTransactionAggregator {
         return;
       }
 
-      const [yearStr, monthStr] = transaction.date.split('-');
-      const year = parseInt(yearStr, 10);
-      const month = parseInt(monthStr, 10);
-      const yearMonth = `${year}-${String(month).padStart(2, '0')}`;
+      const transactionMonth = getTransactionMonth(transaction.date);
 
-      if (!monthlyData[yearMonth]) {
-        monthlyData[yearMonth] = {
-          year: year,
-          month: month,
+      if (!monthlyData[transactionMonth.key]) {
+        monthlyData[transactionMonth.key] = {
+          year: transactionMonth.year,
+          month: transactionMonth.month,
           income: 0,
           expenses: 0,
           investments: 0,
@@ -37,14 +65,14 @@ export class MonthlySummaryTransactionAggregator {
         : false;
 
       if (isIncome || transaction.amount > 0) {
-        monthlyData[yearMonth].income += Math.abs(transaction.amount);
+        monthlyData[transactionMonth.key].income += Math.abs(transaction.amount);
       } else if (isInvestmentOrSavings) {
-        monthlyData[yearMonth].investments += Math.abs(transaction.amount);
+        monthlyData[transactionMonth.key].investments += Math.abs(transaction.amount);
       } else {
-        monthlyData[yearMonth].expenses += Math.abs(transaction.amount);
+        monthlyData[transactionMonth.key].expenses += Math.abs(transaction.amount);
       }
 
-      monthlyData[yearMonth].transactions += 1;
+      monthlyData[transactionMonth.key].transactions += 1;
     });
 
     return Object.values(monthlyData).sort((a, b) => (a.year !== b.year ? a.year - b.year : a.month - b.month));
